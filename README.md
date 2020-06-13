@@ -18,8 +18,7 @@ Then at anywhere of python file, call:
 textdata = Dataloader('fb')
 ```
 
-Then, the data is loaded to the instance `textdata`
-
+Then, the data is loaded to the instance `textdata`  
 There are 5 data structures in the `textdata`
 
 1, The train, valid, test data is stored in `textdata.dataset`
@@ -30,12 +29,9 @@ There are 5 data structures in the `textdata`
 (context_id, sentence_id, emotion_id, raw_context, raw_sentence)
 ```
 `context_id` is a list of integers, each of them is a word index. context here means the previous `k`
-sentences in the dialogue.
-
-`sentence_id` is a list of word indexes, which is the current utterance
-
-`emotion_id` is the emotion's id
-
+sentences in the dialogue.  
+`sentence_id` is a list of word indexes, which is the current utterance  
+`emotion_id` is the emotion's id  
 `raw_context, raw_sentence` are the original words of the context and sentence
 
 2, `textdata.word2index` is a mapping between vocabulary to index,
