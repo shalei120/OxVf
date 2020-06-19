@@ -3,6 +3,7 @@ The code base of empathetic dialogue generation
 
 ## dataloader
 
+### Without pretrained embedding
 the dataloader can automatically read Facebook empathetic data
 
 Assume empathetic data is at last file level:
@@ -55,3 +56,17 @@ word = textdata.index2word[23]
 Similar to above
 
 
+### With pretrained embedding
+
+For example, if embedding is in Glove format:
+```buildoutcfg
+word d1 d2 d3 ... d100
+```
+all split with blank ' '
+
+Then use 
+```buildoutcfg
+textdata = Dataloader('fb', embfile = '../glove.6B.50d.txt')
+```
+
+`embfile` stores the path to the embedding file

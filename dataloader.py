@@ -30,7 +30,7 @@ class Dataloader:
     """
 
 
-    def __init__(self, corpusname):
+    def __init__(self, corpusname, embfile = None):
         """Load all conversations
         Args:
             args: parameters of the model
@@ -42,6 +42,7 @@ class Dataloader:
 
         self.trainingSamples = []  # 2d array containing each question and his answer [[input,target]]
 
+        self.embfile = embfile
         self.datasets = self.loadCorpus()
 
         self._printStats(corpusname)
@@ -229,12 +230,16 @@ class Dataloader:
                         v.write('\n')
 
                 v.close()
+            if not self.embfile:
+                self.word2index = self.read_word2vec(self.basedir + '/voc.txt')
+                sorted_word_index = sorted(self.word2index.items(), key=lambda item: item[1])
+                print('sorted')
+                self.index2word = [w for w, n in sorted_word_index]
+                print('index2word')
+            else:
+                self.word2index, self.index2word, self.index2vector = self.read_word2vec_from_pretrained(self.embfile)
 
-            self.word2index = self.read_word2vec(self.basedir + '/voc.txt')
-            sorted_word_index = sorted(self.word2index.items(), key=lambda item: item[1])
-            print('sorted')
-            self.index2word = [w for w, n in sorted_word_index]
-            print('index2word')
+
             self.index2word_set = set(self.index2word)
 
             for setname in ['train', 'valid', 'test']:
@@ -305,6 +310,37 @@ class Dataloader:
         print ('Dictionary Got!')
         return word2index
 
+    def read_word2vec_from_pretrained(self, embfile, topk_word_num= 30000 ):
+        word2index = dict()
+        word2index['PAD'] = 0
+        word2index['START_TOKEN'] = 1
+        word2index['END_TOKEN'] = 2
+        word2index['UNK'] = 3
+        word2index['SOC'] = 4
+        cnt = 5
+        vectordim = -1
+        index2vector = []
+        with open(embfile, "r") as v:
+            lines = v.readlines()
+            lines = lines[:topk_word_num]
+            for line in tqdm(lines):
+                word_vec = line.strip().split()
+                word = word_vec[0]
+                vector = np.asarray([float(value) for value in word_vec[1:]])
+                if vectordim == -1:
+                    vectordim = len(vector)
+                index2vector.append(vector)
+                word2index[word] = cnt
+                print(word,cnt)
+                cnt += 1
+
+        index2vector = [np.random.normal(size=[vectordim]).astype('float32') for _ in range(cnt)] + index2vector
+        index2vector = np.asarray(index2vector)
+        index2word = [w for w, n in word2index]
+        print(len(word2index),cnt)
+        print ('Dictionary Got!')
+        return word2index, index2word, index2vector
+
     def TurnWordID(self, words):
         res = []
         for w in words:
@@ -331,4 +367,5 @@ class Dataloader:
 
 
 if __name__ == '__main__':
-    textdata = Dataloader('fb')
+    # textdata = Dataloader('fb')
+    textdata = Dataloader('fb', embfile = '../glove.6B.50d.txt')
