@@ -84,5 +84,7 @@ class Model(nn.Module):
 
     def predict(self, x):
         _, en_state = self.buildmodel(x)
-        de_words = self.decoder.generate(en_state)
+        emo_label = x['emo_label']
+        emo_vector = self.embedding(emo_label) # batch * hid
+        de_words = self.decoder.generate(en_state, emo_vector)
         return de_words

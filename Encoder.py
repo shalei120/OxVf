@@ -62,8 +62,8 @@ class Encoder(nn.Module):
         inputs = torch.transpose(inputs, 0, 1)
         bidirec = 2 if self.bidirectional else 1
         hidden = (
-        autograd.Variable(torch.randn(args['enc_numlayer']*bidirec, batch_size, args['hiddenSize'])),
-        autograd.Variable(torch.randn(args['enc_numlayer']*bidirec, batch_size, args['hiddenSize'])))
+        autograd.Variable(torch.randn(args['enc_numlayer']*bidirec, batch_size, args['hiddenSize'])).to(args['device']),
+        autograd.Variable(torch.randn(args['enc_numlayer']*bidirec, batch_size, args['hiddenSize'])).to(args['device']))
         packed_input = inputs
 
         packed_out, hidden = self.enc_unit(packed_input, hidden)

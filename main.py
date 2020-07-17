@@ -68,7 +68,7 @@ class Task:
         self.model = self.model.to(args['device'])
         self.train()
 
-    def train(self, print_every=10000, plot_every=10, learning_rate=0.001):
+    def train(self, print_every=1000, plot_every=10, learning_rate=0.001):
         start = time.time()
         plot_losses = []
         print_loss_total = 0  # Reset every print_every
@@ -134,7 +134,7 @@ class Task:
         # self.test()
         # showPlot(plot_losses)
 
-    def test(self, datasetname, max_BLEU, eps=1e-20):
+    def test(self, datasetname, eps=1e-20):
 
         pred_ans = []
         gold_ans = []
@@ -144,7 +144,7 @@ class Task:
                 x['enc_input'] = autograd.Variable(torch.LongTensor(batch.contextSeqs)).to(args['device'])
                 x['enc_len'] = batch.context_lens
                 x['dec_input'] = autograd.Variable(torch.LongTensor(batch.senSeqs)).to(args['device'])
-                x['dec_len'] = batch.senSeqs
+                x['dec_len'] = batch.sen_lens
                 x['dec_target'] = autograd.Variable(torch.LongTensor(batch.senSeqs_target)).to(args['device'])
                 x['emo_label'] = autograd.Variable(torch.LongTensor(batch.emo_label)).to(args['device'])
 
@@ -152,9 +152,10 @@ class Task:
                 pred_ans.extend(decoded_words)
                 gold_ans.extend([[r] for r in batch.sen_raw])
 
-        bleu = corpus_bleu(gold_ans, pred_ans)
+        # bleu = corpus_bleu(gold_ans, pred_ans)
+        corpusbleu = corpus_bleu(list_of_references=gold_ans, hypotheses=pred_ans)
 
-        return bleu
+        return corpusbleu
 
     def indexesFromSentence(self, sentence):
         return [self.textData.word2index[word] if word in self.textData.word2index else self.textData.word2index['UNK']
@@ -193,6 +194,30 @@ class Task:
             print('<', output_sentence, label)
             print('')
 
+    def get_sentence_BLEU(self, actual_word_lists, generated_word_lists):
+        bleu_scores = self.get_corpus_bleu_scores([actual_word_lists], [generated_word_lists])
+        sumss = 0
+        for s in bleu_scores:
+            sumss += 0.25 * bleu_scores[s]
+        return sumss
+
+    def get_corpus_BLEU(self, actual_word_lists, generated_word_lists):
+        bleu_scores = self.get_corpus_bleu_scores(actual_word_lists, generated_word_lists)
+        sumss = 0
+        for s in bleu_scores:
+            sumss += 0.25 * bleu_scores[s]
+        return sumss
+
+    def get_corpus_bleu_scores(self, actual_word_lists, generated_word_lists):
+        bleu_scores = dict()
+        for i in range(len(bleu_score_weights)):
+            bleu_scores[i + 1] = round(
+                corpus_bleu(
+                    list_of_references=actual_word_lists,
+                    hypotheses=generated_word_lists,
+                    weights=bleu_score_weights[i + 1]), 4)
+
+        return bleu_scores
 
 if __name__ == '__main__':
     r = Task()

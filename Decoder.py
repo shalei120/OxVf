@@ -93,12 +93,12 @@ class Decoder(nn.Module):
         # sentence_emb = sentence_emb.view(self.batch_size,1, -1 )
 
         decoded_words = []
-        decoder_input_id = torch.tensor([[self.word2index['START_TOKEN'] for _ in range(self.batch_size)]])  # SOS 1*batch
-        decoder_input = self.embedding(decoder_input_id).contiguous()
+        decoder_input_id = torch.tensor([[self.word2index['START_TOKEN'] for _ in range(self.batch_size)]]).to(args['device'])  # SOS 1*batch
+        decoder_input = self.embedding(decoder_input_id).contiguous() # 1 batch emb
         # print('decoder input: ', decoder_input.shape)
         decoder_id_res = []
         for di in range(self.max_length):
-            decoder_input = torch.cat([decoder_input, emo_vector], dim = 1)
+            decoder_input = torch.cat([decoder_input, emo_vector.unsqueeze(0)], dim = 2)
             decoder_output, state = self.dec_unit(decoder_input, state)
 
             decoder_output = self.out_unit(decoder_output)
