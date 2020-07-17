@@ -22,6 +22,8 @@ class Batch:
         self.emo_label = []
         self.senSeqs = []
         self.sen_lens = []
+        self.senSeqs_target = []
+        self.sen_raw = []
 
 
 class Dataloader:
@@ -85,10 +87,12 @@ class Dataloader:
                 sen_ids = sen_ids[:args['maxLengthEnco']]
 
             batch.contextSeqs.append(context_ids)
-            batch.senSeqs.append(sen_ids)
+            batch.senSeqs.append([self.word2index['START_TOKEN']]+sen_ids)
             batch.context_lens.append(len(batch.contextSeqs[i]))
             batch.sen_lens.append(len(batch.senSeqs[i]))
             batch.emo_label.append(emotion)
+            batch.senSeqs_target.append(sen_ids + [self.word2index['END_TOKEN']])
+            batch.sen_raw.append(raw_sentence)
 
         maxlen_context = max(batch.context_lens)
         maxlen_sen = max(batch.sen_lens)
@@ -97,6 +101,7 @@ class Dataloader:
         for i in range(batchSize):
             batch.contextSeqs[i] = batch.contextSeqs[i] + [self.word2index['PAD']] * (maxlen_context - len(batch.contextSeqs[i]))
             batch.senSeqs[i] = batch.senSeqs[i] + [self.word2index['PAD']] * (maxlen_sen - len(batch.senSeqs[i]))
+            batch.senSeqs_target[i] = batch.senSeqs_target[i] + [self.word2index['PAD']] * (maxlen_sen - len(batch.senSeqs_target[i]))
 
         return batch
 
