@@ -29,11 +29,11 @@ class Decoder(nn.Module):
         self.embedding = embedding
 
         if args['decunit'] == 'lstm':
-            self.dec_unit = nn.LSTM(input_size=args['embeddingSize'] + args['hiddenSize'],
+            self.dec_unit = nn.LSTM(input_size=args['embeddingSize'] + args['hiddenSize'] +args['ALBERT_hidden_size'],
                                     hidden_size=args['hiddenSize'],
                                     num_layers=args['dec_numlayer'])
         elif args['decunit'] == 'gru':
-            self.dec_unit = nn.GRU(input_size=args['embeddingSize'] + args['hiddenSize'],
+            self.dec_unit = nn.GRU(input_size=args['embeddingSize'] + args['hiddenSize']+args['ALBERT_hidden_size'],
                                    hidden_size=args['hiddenSize'],
                                    num_layers=args['dec_numlayer'])
 
