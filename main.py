@@ -1,6 +1,8 @@
 # Copyright 2020 . All Rights Reserved.
 # Author : Lei Sha
 
+import functools
+print = functools.partial(print, flush=True)
 import argparse
 import os
 
@@ -96,6 +98,7 @@ class Task:
                 x['dec_len'] = batch.senSeqs
                 x['dec_target'] = autograd.Variable(torch.LongTensor(batch.senSeqs_target)).to(args['device'])
                 x['emo_label'] = autograd.Variable(torch.LongTensor(batch.emo_label)).to(args['device'])
+                x['enc_input_raw'] = [' '.join(r) for r in batch.context_raw]
 
                 loss = self.model(x)  # batch seq_len outsize
 

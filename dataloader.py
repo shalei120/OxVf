@@ -24,6 +24,7 @@ class Batch:
         self.sen_lens = []
         self.senSeqs_target = []
         self.sen_raw = []
+        self.context_raw = []
 
 
 class Dataloader:
@@ -93,6 +94,7 @@ class Dataloader:
             batch.emo_label.append(emotion)
             batch.senSeqs_target.append(sen_ids + [self.word2index['END_TOKEN']])
             batch.sen_raw.append(raw_sentence)
+            batch.context_raw.append(raw_context)
 
         maxlen_context = max(batch.context_lens)
         maxlen_sen = max(batch.sen_lens)
