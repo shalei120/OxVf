@@ -24,9 +24,11 @@ import copy
 from Hyperparameters import args
 
 from Model import Model
-
+from BERTEncDecModel import BERTEncDecModel
+from BART import BARTModel
 parser = argparse.ArgumentParser()
 parser.add_argument('--gpu', '-g')
+parser.add_argument('--modelarch', '-m')
 cmdargs = parser.parse_args()
 
 usegpu = True
@@ -36,6 +38,11 @@ if cmdargs.gpu is None:
 else:
     usegpu = True
     args['device'] = 'cuda:' + str(cmdargs.gpu)
+
+if cmdargs.modelarch is None:
+    args['model_arch'] = 'None'
+else:
+    args['model_arch'] = cmdargs.modelarch
 
 
 
@@ -58,6 +65,13 @@ class Task:
         self.model_path = args['rootDir'] + '/saved_model.mdl'
 
     def main(self):
+        if  args['model_arch'] == 'li2016':
+            args['batchSize'] = 16
+        elif args['model_arch'] == 'bert2bert':
+            args['batchSize'] = 8
+        elif args['model_arch'] == 'bart':
+            args['batchSize'] = 8
+
         self.textData = Dataloader('fb')
         self.start_token = self.textData.word2index['START_TOKEN']
         self.end_token = self.textData.word2index['END_TOKEN']
@@ -65,19 +79,27 @@ class Task:
         args['emo_labelSize'] = len(self.textData.index2emotion)
         print(self.textData.getVocabularySize())
 
-        print('Using Li et al. 2016 model.')
-        self.model = Model(self.textData.word2index, self.textData.index2word)
+        print('Using ',args['model_arch'] ,' model.')
+        if  args['model_arch'] == 'li2016':
+            self.model = Model(self.textData.word2index, self.textData.index2word)
+        elif args['model_arch'] == 'bert2bert':
+            self.model = BERTEncDecModel()
+            self.model.train()
+        elif args['model_arch'] == 'bart':
+            self.model = BARTModel()
+            self.model.train()
+
         self.model = self.model.to(args['device'])
         self.train()
 
-    def train(self, print_every=1000, plot_every=10, learning_rate=0.001):
+    def train(self, print_every=1000, plot_every=10, learning_rate=8e-4):
         start = time.time()
         plot_losses = []
         print_loss_total = 0  # Reset every print_every
         plot_loss_total = 0  # Reset every plot_every
         print(type(self.textData.word2index))
 
-        optimizer = optim.Adam(self.model.parameters(), lr=learning_rate, eps=1e-3, amsgrad=True)
+        optimizer = optim.Adam(self.model.parameters(), lr=learning_rate, eps = 0.001,amsgrad=True)
 
         iter = 1
         batches = self.textData.getBatches()
@@ -99,6 +121,7 @@ class Task:
                 x['dec_target'] = autograd.Variable(torch.LongTensor(batch.senSeqs_target)).to(args['device'])
                 x['emo_label'] = autograd.Variable(torch.LongTensor(batch.emo_label)).to(args['device'])
                 x['enc_input_raw'] = [' '.join(r) for r in batch.context_raw]
+                x['dec_input_raw'] = [' '.join(r) for r in batch.sen_raw]
 
                 loss = self.model(x)  # batch seq_len outsize
 
@@ -128,7 +151,7 @@ class Task:
             BLEU = self.test('test')
             if BLEU > max_BLEU or max_BLEU == -1:
                 print('BLEU = ', BLEU, '>= max_BLEU(', max_BLEU, '), saving model...')
-                torch.save(self.model, self.model_path)
+                # torch.save(self.model, self.model_path)
                 max_BLEU = BLEU
 
             print('Epoch ', epoch, 'loss = ', sum(losses) / len(losses), 'Valid BLEU = ', BLEU,
@@ -150,8 +173,12 @@ class Task:
                 x['dec_len'] = batch.sen_lens
                 x['dec_target'] = autograd.Variable(torch.LongTensor(batch.senSeqs_target)).to(args['device'])
                 x['emo_label'] = autograd.Variable(torch.LongTensor(batch.emo_label)).to(args['device'])
+                x['enc_input_raw'] = [' '.join(r) for r in batch.context_raw]
+                x['dec_input_raw'] = [' '.join(r) for r in batch.sen_raw]
 
                 decoded_words= self.model.predict(x)
+                print(decoded_words[0])
+                print(batch.sen_raw[0])
                 pred_ans.extend(decoded_words)
                 gold_ans.extend([[r] for r in batch.sen_raw])
 

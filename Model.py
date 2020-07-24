@@ -43,13 +43,13 @@ class Model(nn.Module):
         self.decoder = Decoder(w2i, i2w, self.embedding)
         self.tanh = nn.Tanh()
         self.softmax = nn.Softmax(dim = -1)
-        self.BERTtokenizer = AlbertTokenizer.from_pretrained('albert-base-v2')
-        albert_base_configuration = AlbertConfig(
-              hidden_size=args['ALBERT_hidden_size'],
-              num_attention_heads=12,
-              intermediate_size=3072,
-          )
-        self.Albert_model = AlbertModel(albert_base_configuration)
+        # self.BERTtokenizer = AlbertTokenizer.from_pretrained('albert-base-v2')
+        # albert_base_configuration = AlbertConfig(
+        #       hidden_size=args['ALBERT_hidden_size'],
+        #       num_attention_heads=12,
+        #       intermediate_size=3072,
+        #   )
+        # self.Albert_model = AlbertModel(albert_base_configuration)
 
     def buildmodel(self, x):
         '''
@@ -100,17 +100,17 @@ class Model(nn.Module):
         Attentions weights after the attention softmax, used to compute the weighted average in the self-attention heads.
         '''
 
-        ALBERT_input_sentences = x['enc_input_raw']
-        ALBERT_encoded_inputs = self.BERTtokenizer(ALBERT_input_sentences,padding=True, truncation=True,return_tensors="pt")
-        ALBERT_encoded_inputs['input_ids'] = ALBERT_encoded_inputs['input_ids'].to(args['device'])
-        ALBERT_encoded_inputs['token_type_ids'] = ALBERT_encoded_inputs['token_type_ids'].to(args['device'])
-        ALBERT_encoded_inputs['attention_mask'] = ALBERT_encoded_inputs['attention_mask'].to(args['device'])
-        last_hidden_state, pooler_output = self.Albert_model(**ALBERT_encoded_inputs)
+        # ALBERT_input_sentences = x['enc_input_raw']
+        # ALBERT_encoded_inputs = self.BERTtokenizer(ALBERT_input_sentences,padding=True, truncation=True,return_tensors="pt")
+        # ALBERT_encoded_inputs['input_ids'] = ALBERT_encoded_inputs['input_ids'].to(args['device'])
+        # ALBERT_encoded_inputs['token_type_ids'] = ALBERT_encoded_inputs['token_type_ids'].to(args['device'])
+        # ALBERT_encoded_inputs['attention_mask'] = ALBERT_encoded_inputs['attention_mask'].to(args['device'])
+        # last_hidden_state, pooler_output = self.Albert_model(**ALBERT_encoded_inputs)
 
         _, en_state = self.encoder(self.encoderInputs, self.encoder_lengths)
         emo_vector = self.embedding(self.emo_label) # batch * hid
-        info_vector = torch.cat([emo_vector, pooler_output], dim = 1)
-
+        # info_vector = torch.cat([emo_vector, pooler_output], dim = 1)
+        info_vector = emo_vector
         de_outputs = self.decoder(en_state, info_vector, self.decoderInputs, self.decoder_lengths, self.decoderTargets)
 
         recon_loss = self.CEloss(torch.transpose(de_outputs, 1, 2), self.decoderTargets)
@@ -118,15 +118,13 @@ class Model(nn.Module):
         recon_loss = torch.squeeze(recon_loss) * mask
         recon_loss_mean = torch.mean(recon_loss)
 
-        return recon_loss_mean, en_state
+        return recon_loss_mean, en_state, info_vector
 
     def forward(self, x):
-        loss, _ = self.buildmodel(x)
+        loss, _, _ = self.buildmodel(x)
         return loss
 
     def predict(self, x):
-        _, en_state = self.buildmodel(x)
-        emo_label = x['emo_label']
-        emo_vector = self.embedding(emo_label) # batch * hid
-        de_words = self.decoder.generate(en_state, emo_vector)
+        _, en_state, info = self.buildmodel(x)
+        de_words = self.decoder.generate(en_state, info)
         return de_words

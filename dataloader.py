@@ -93,6 +93,7 @@ class Dataloader:
             batch.sen_lens.append(len(batch.senSeqs[i]))
             batch.emo_label.append(emotion)
             batch.senSeqs_target.append(sen_ids + [self.word2index['END_TOKEN']])
+            # print(raw_sentence)
             batch.sen_raw.append(raw_sentence)
             batch.context_raw.append(raw_context)
 
@@ -196,7 +197,7 @@ class Dataloader:
                             prev_str = " SOC ".join(history[-max_hist_len:])
                             contextt = prev_str.split(' ')[:newmaxlen]
                             sent = sparts[5].replace("_comma_", ",")
-                            label = sent.split(' ')[:maxlen]
+                            label = self.tokenizer(sent.lower())[:maxlen]
                             lbl_min = sparts[2]
                             emotions.add(lbl_min)
                             data.append((contextt, label, lbl_min))

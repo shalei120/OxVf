@@ -26,7 +26,7 @@ class HP:
 
         args['numEpochs'] = 100
         args['saveEvery'] = 2000
-        args['batchSize'] = 32
+        args['batchSize'] = 16
         args['learningRate'] = 0.001
         args['dropout'] = 0.9
         args['clip'] = 5.0
@@ -39,7 +39,7 @@ class HP:
         args['maxLengthEnco'] = args['maxLength']
         args['maxLengthDeco'] = args['maxLength'] + 1
 
-        args['max_history_length'] =3
+        args['max_history_length'] =1
         args['ALBERT_hidden_size'] = 768
 
         return args

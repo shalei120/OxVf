@@ -29,11 +29,11 @@ class Decoder(nn.Module):
         self.embedding = embedding
 
         if args['decunit'] == 'lstm':
-            self.dec_unit = nn.LSTM(input_size=args['embeddingSize'] + args['hiddenSize'] +args['ALBERT_hidden_size'],
+            self.dec_unit = nn.LSTM(input_size=args['embeddingSize'],# + args['hiddenSize'] +args['ALBERT_hidden_size'],
                                     hidden_size=args['hiddenSize'],
                                     num_layers=args['dec_numlayer'])
         elif args['decunit'] == 'gru':
-            self.dec_unit = nn.GRU(input_size=args['embeddingSize'] + args['hiddenSize']+args['ALBERT_hidden_size'],
+            self.dec_unit = nn.GRU(input_size=args['embeddingSize'],# + args['hiddenSize']+args['ALBERT_hidden_size'],
                                    hidden_size=args['hiddenSize'],
                                    num_layers=args['dec_numlayer'])
 
@@ -52,8 +52,8 @@ class Decoder(nn.Module):
         self.batch_size = self.decoderInputs.size()[0]
         self.dec_len = self.decoderInputs.size()[1]
         dec_input_embed = self.embedding(self.decoderInputs) # batch seq hid
-        dec_word_emo_vec = torch.cat([dec_input_embed, emo_vector.unsqueeze(1).repeat([1,self.dec_len,1])], dim = 2)
-
+        # dec_word_emo_vec = torch.cat([dec_input_embed, emo_vector.unsqueeze(1).repeat([1,self.dec_len,1])], dim = 2)
+        dec_word_emo_vec = dec_input_embed
         de_outputs, de_state = self.decoder_t(en_state, dec_word_emo_vec, self.batch_size)
         return de_outputs
 
@@ -67,8 +67,8 @@ class Decoder(nn.Module):
         self.batch_size = en_state[0].size()[1]
         de_words = self.decoder_g(en_state, emo_vector)
         for k in range(len(de_words)):
-            if '<EOS>' in de_words[k]:
-                ind = de_words[k].index('<EOS>')
+            if 'END_TOKEN' in de_words[k]:
+                ind = de_words[k].index('END_TOKEN')
                 de_words[k] = de_words[k][:ind]
         return de_words
 
@@ -98,7 +98,7 @@ class Decoder(nn.Module):
         # print('decoder input: ', decoder_input.shape)
         decoder_id_res = []
         for di in range(self.max_length):
-            decoder_input = torch.cat([decoder_input, emo_vector.unsqueeze(0)], dim = 2)
+            # decoder_input = torch.cat([decoder_input, emo_vector.unsqueeze(0)], dim = 2)
             decoder_output, state = self.dec_unit(decoder_input, state)
 
             decoder_output = self.out_unit(decoder_output)
