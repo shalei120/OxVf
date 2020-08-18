@@ -3,3 +3,6 @@ torch>=1.2
 numpy
 nltk
 datetime
+transformers
+json
+
